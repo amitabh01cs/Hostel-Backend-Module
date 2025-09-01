@@ -18,7 +18,7 @@ public class CorsGlobalConfig {
         configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
                 "https://indoreinstitute-hostel.vercel.app",
-                "https://hostel-management-system-zeta-two.vercel.app"
+                "https://indoreinstitutehostel.vercel.app"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));

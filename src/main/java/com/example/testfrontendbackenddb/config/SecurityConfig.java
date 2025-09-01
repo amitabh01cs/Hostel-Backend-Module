@@ -20,7 +20,7 @@ public class SecurityConfig {
                 corsConfig.setAllowedOriginPatterns(List.of(
                         "http://localhost:*",
                         "https://indoreinstitute-hostel.vercel.app",
-                        "https://hostel-management-system-zeta-two.vercel.app"
+                        "https://indoreinstitutehostel.vercel.app"
                 ));
                 corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                 corsConfig.setAllowedHeaders(List.of("*"));
