@@ -28,11 +28,11 @@ public class SecurityConfig {
                 return corsConfig;
             }))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // preflight allow
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // 🔑 Allow preflight
                 .requestMatchers("/api/**").permitAll()
                 .anyRequest().permitAll()
             );
-        // ⚠ Remove formLogin for pure REST API
+
         return http.build();
     }
 }
