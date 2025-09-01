@@ -19,20 +19,20 @@ public class SecurityConfig {
                 var corsConfig = new org.springframework.web.cors.CorsConfiguration();
                 corsConfig.setAllowedOriginPatterns(List.of(
                         "http://localhost:*",
-                        "https://*.vercel.app"   // allows any vercel subdomain
+                        "https://indoreinstitute-hostel.vercel.app",
+                        "https://hostel-management-system-aw7kcse44-amitabhs-projects.vercel.app"
                 ));
                 corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                 corsConfig.setAllowedHeaders(List.of("*"));
-                corsConfig.setExposedHeaders(List.of("Authorization", "Content-Type"));
                 corsConfig.setAllowCredentials(true);
                 return corsConfig;
             }))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // preflight allow
                 .requestMatchers("/api/**").permitAll()
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             );
-        // ⚠️ Don't enable formLogin() unless you need HTML login form
+        // ⚠ Remove formLogin for pure REST API
         return http.build();
     }
 }
