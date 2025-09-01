@@ -1,3 +1,4 @@
+com\example\testfrontendbackenddb\config\CorsGlobalConfig.class
 com\example\testfrontendbackenddb\dto\ComplaintResponse.class
 com\example\testfrontendbackenddb\controller\AdminLoginController.class
 com\example\testfrontendbackenddb\entity\SecurityPassActivityLog.class
