@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "iist-hostel",
+  "private_key_id": "5c2106c5785e5547ba8e3dce519a1a958f5b84fb",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC28KVbzBjkm7z2\nxBktM7fUBrJk0++y1FmjfkDaEAMVptQdfxOZFCE+0xIk/nVNdqA+Z8BPflXPTuo7\noNiyQlzVzaoCNMTW0xQL33U4c8IlW0NmL5IzNCL96DwZj6ENd08KSfIjFuvDY7DU\nnkQGxZaj45wtTCP0N3NNSJxoQCG5rdTtV3DxbCs+924/WGR2yFHE4p1xNjf3pkFy\nFFswE5Ovi9D+s9ylVUlK1lLTmc/42W6FGD6tMzLuqUjjkVDbP+G00tUPe3iOu4rH\n6psCgj5fSeIknjXs4DmJPLv2uleIuJOJAY1Lr4M+70bX1nlG0y2TQog3xqOCdNgV\nw+GIaeY7AgMBAAECggEAFuXaHLpYJ00jAtQavqCpkr1f2OT6LK0NpzwnS+QTLsOZ\n6zM7tb5iRuXOcJj0/8QoXIdJ9+k9PlyHTv1cAjvyOMSsUehe9vCmorHOj0lV9K0O\nq5yqtQQCmTtXQm/K3c+gMg59Y0z8J5Gz0XkZ1KsopszXgIf2PBwwr2y2Pwo/7miQ\nbRHpO19DxZhHHPGD8H7vURnBhp7fIRDqEeyeEnAHKj/xPZ8jePR1FW2uoXMa0vlZ\nMswmFSzj0TsKPb8Rq/Gy6WoQysCSManJh2HBdkpMpmJ1kCDUX7lE68A56Z169vlo\nzRQ0UlGyqhy9861XufYnUxmCXEBJ7g5MK/AIp3HgMQKBgQDkLJcQ4TM+IEUKhCWo\nExlyzQh8PKmliEzp6vasv524YGhch1vzQ61CCg7+YwYKxp6qPqtcSvCsB7pir5Be\n8doIr7vjEMXgVdjBzLU/JGvYiJyXGGMT9B/lh8wAS8eynfcZJD/XoZp9xou5WcWZ\nPP8FewzsaZy2PkGCoOqr/+oTyQKBgQDNP+H6GQHu3zfQNCQiWIu0jiXiJzX6NC1V\nkRTBiXR292jAuJ5wYoBMmdqVWTXrRIMaB8ekJQ/IZ3PcuPjBYflvcHo2OLbAQUAP\nYafdwRJHu42+T+i6R/fzul/8Hg/uNeylWhVVtuB3qqcFyVyixHT2hzjHCThu1OfF\nnGn3CicD4wKBgQDO+J+DITOxG+ZkdqANyF1iJBeZUhF0ZKGX4Zkl854mW9TucZ33\nmKD1cVhOahZV+fp8ZOJdkmCjO1NXJvdnGCx1iqp8en9zUYuPp5eUkf39aVXZPLbK\np7uzIa3ratHW9LDqLlZ2y1Du3AVr+MFjkc+l8gsz+0y6htg3nK2hnT5/+QKBgQDB\nJ4xXW69pCCIzSs5ykBexbFCUesgeVXoQW39H/z5eMskfDN717ozFCckd4Z2PcaNb\nHNUxUTuAInNz1ZMsEjK2QAiS/F5noUBS+VkLpIW6gfOLlRH0NIRQlyV7UyM0zwSM\nO7F2P6sQksWp+Wy3NODJnEm/bZrxGmWfn2pNdP1wdwKBgEDk4UQ9Sdw1nUtULHnR\n/XExjlAxPWNkCBql9R9Wd1XquP+K2O1HHbQ+XeGSW0c5jxjktKKM+cEqwJDgO5sD\nvGL+5qF99CkarcJcBEy44+sxMLG9TDLVXfKioSMf4fHeUrnfajjEbekLBnMiExG0\nyhSqZuv8Cso+lAdufYTWmYSf\n-----END PRIVATE KEY-----\n",
+  "client_email": "amitabh-ranjan@iist-hostel.iam.gserviceaccount.com",
+  "client_id": "115508529035207029321",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/amitabh-ranjan%40iist-hostel.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
