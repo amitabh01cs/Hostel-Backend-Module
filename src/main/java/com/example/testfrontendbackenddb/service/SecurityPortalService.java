@@ -8,6 +8,7 @@ import com.example.testfrontendbackenddb.repository.SecurityPassActivityLogRepos
 import com.example.testfrontendbackenddb.repository.RegisterStudentRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,19 +31,15 @@ public class SecurityPortalService {
 
     // Merged active passes (not completed), with checkOutTime and possibly checkInTime if partial
     public List<Map<String, Object>> getActivePassesWithTimes() {
-        Date now = new Date();
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(now);
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        Date startOfDay = cal.getTime();
-        cal.set(Calendar.HOUR_OF_DAY, 23);
-        cal.set(Calendar.MINUTE, 59);
-        cal.set(Calendar.SECOND, 59);
-        cal.set(Calendar.MILLISECOND, 999);
-        Date endOfDay = cal.getTime();
+        // Get today's date in IST
+        ZoneId zoneId = ZoneId.of("Asia/Kolkata");
+        LocalDate today = LocalDate.now(zoneId);
+
+        ZonedDateTime startOfDayIST = today.atStartOfDay(zoneId);
+        ZonedDateTime endOfDayIST = today.atTime(23, 59, 59, 999_000_000).atZone(zoneId);
+
+        Date startOfDay = Date.from(startOfDayIST.toInstant());
+        Date endOfDay = Date.from(endOfDayIST.toInstant());
 
         List<GatePassRequest> passes = gatePassRepo.findByStatusAndFromTimeBetween("approved", startOfDay, endOfDay);
 
@@ -82,19 +79,15 @@ public class SecurityPortalService {
 
     // Merged completed logs (completed passes), with checkOutTime and checkInTime
     public List<Map<String, Object>> getCompletedLogsWithTimes(Date date, String gender) {
-        // 1. Get all logs for the date
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(date);
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        Date startOfDay = cal.getTime();
-        cal.set(Calendar.HOUR_OF_DAY, 23);
-        cal.set(Calendar.MINUTE, 59);
-        cal.set(Calendar.SECOND, 59);
-        cal.set(Calendar.MILLISECOND, 999);
-        Date endOfDay = cal.getTime();
+        // 1. Get all logs for the date in IST
+        ZoneId zoneId = ZoneId.of("Asia/Kolkata");
+        LocalDate localDate = date.toInstant().atZone(zoneId).toLocalDate();
+
+        ZonedDateTime startOfDayIST = localDate.atStartOfDay(zoneId);
+        ZonedDateTime endOfDayIST = localDate.atTime(23, 59, 59, 999_000_000).atZone(zoneId);
+
+        Date startOfDay = Date.from(startOfDayIST.toInstant());
+        Date endOfDay = Date.from(endOfDayIST.toInstant());
 
         List<SecurityPassActivityLog> logs = logRepo.findByTimestampBetween(startOfDay, endOfDay);
 
@@ -164,6 +157,7 @@ public class SecurityPortalService {
         return logRepo.findTop10ByOrderByTimestampDesc();
     }
 
+    // Always use IST time for check-out
     public void checkOut(Integer gatePassId) {
         GatePassRequest pass = gatePassRepo.findById(gatePassId).orElseThrow();
         List<SecurityPassActivityLog> logs = logRepo.findByGatePassId(gatePassId);
@@ -175,12 +169,18 @@ public class SecurityPortalService {
         log.setStudentId(pass.getStudent().getId());
         log.setStudentName(pass.getStudent().getFullName());
         log.setAction("checkout");
-        log.setTimestamp(new Date());
+
+        // Set timestamp in IST
+        ZoneId zoneId = ZoneId.of("Asia/Kolkata");
+        Instant nowIST = ZonedDateTime.now(zoneId).toInstant();
+        log.setTimestamp(Date.from(nowIST));
+
         log.setReason(pass.getReason());
         log.setDestination(pass.getPlaceToVisit());
         logRepo.save(log);
     }
 
+    // Always use IST time for check-in
     public void checkIn(Integer gatePassId) {
         GatePassRequest pass = gatePassRepo.findById(gatePassId).orElseThrow();
         List<SecurityPassActivityLog> logs = logRepo.findByGatePassId(gatePassId);
@@ -192,7 +192,12 @@ public class SecurityPortalService {
         log.setStudentId(pass.getStudent().getId());
         log.setStudentName(pass.getStudent().getFullName());
         log.setAction("checkin");
-        log.setTimestamp(new Date());
+
+        // Set timestamp in IST
+        ZoneId zoneId = ZoneId.of("Asia/Kolkata");
+        Instant nowIST = ZonedDateTime.now(zoneId).toInstant();
+        log.setTimestamp(Date.from(nowIST));
+
         log.setReason(pass.getReason());
         log.setDestination(pass.getPlaceToVisit());
         logRepo.save(log);
