@@ -73,13 +73,14 @@ public class SecurityPortalService {
             map.put("checkInTime", getActionTime(passLogs, "checkin"));
             map.put("toTime", pass.getToTime()); // Add arrival time for frontend
 
-            // --- IMPORTANT: Provide studentId and robust photoUrl ---
+            // --- IMPORTANT: Provide studentId and correct photoUrl (ALWAYS USE STUDENT ID, NOT PASS ID) ---
             if (s != null) {
                 map.put("studentId", s.getId());
                 String photoUrl = "";
                 if (s.getPhotoPath() != null && !s.getPhotoPath().isEmpty()) {
                     photoUrl = s.getPhotoPath();
                 } else if (s.getId() != null) {
+                    // FIX: Always use student ID here, not pass ID
                     photoUrl = "https://hostel-backend-module-production-iist.up.railway.app/api/student/photo/" + s.getId();
                 }
                 map.put("photoUrl", photoUrl);
@@ -147,7 +148,7 @@ public class SecurityPortalService {
             map.put("checkInTime", getActionTime(passLogs, "checkin"));
             map.put("toTime", toTime);
 
-            // --- IMPORTANT: Provide robust photoUrl ---
+            // --- IMPORTANT: Provide robust photoUrl using student ID, not pass ID ---
             if (student != null) {
                 String photoUrl = "";
                 if (student.getPhotoPath() != null && !student.getPhotoPath().isEmpty()) {
