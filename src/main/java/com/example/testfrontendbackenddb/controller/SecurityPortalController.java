@@ -35,7 +35,9 @@ public class SecurityPortalController {
             parsedDate = new Date();
         } else {
             try {
-                parsedDate = new SimpleDateFormat("yyyy-MM-dd").parse(date);
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                sdf.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata")); // Ensure IST for parsing
+                parsedDate = sdf.parse(date);
             } catch (Exception e) {
                 parsedDate = new Date();
             }
