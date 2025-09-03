@@ -51,11 +51,23 @@ public class GatePassController {
                 String dateStr = (String) reqMap.get("date");
                 String fromStr = (String) reqMap.get("from");
                 String toStr = (String) reqMap.get("to");
+
+                // Parse IST time
                 SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm");
+                sdf.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
                 fromTime = sdf.parse(dateStr + " " + fromStr);
                 toTime = sdf.parse(dateStr + " " + toStr);
+
+                // OPTIONAL: If you want to store in UTC in DB (recommended)
+                /*
+                SimpleDateFormat utcFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm");
+                utcFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+                fromTime = utcFormat.parse(utcFormat.format(fromTime));
+                toTime = utcFormat.parse(utcFormat.format(toTime));
+                */
             } else {
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                sdf.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
                 fromTime = sdf.parse((String) reqMap.get("from"));
                 toTime = sdf.parse((String) reqMap.get("to"));
             }
@@ -177,6 +189,7 @@ public class GatePassController {
                 .orElseThrow(() -> new RuntimeException("Request not found"));
         try {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+            sdf.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
             if (timeMap.containsKey("fromTime")) {
                 req.setFromTime(sdf.parse(timeMap.get("fromTime")));
             }
