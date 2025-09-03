@@ -146,12 +146,19 @@ public class SecurityPortalService {
         return "active";
     }
 
-    private String getActionTime(List<SecurityPassActivityLog> logs, String action) {
-        return logs.stream()
-                .filter(l -> action.equalsIgnoreCase(l.getAction()))
-                .map(l -> l.getTimestamp() != null ? l.getTimestamp().toString() : null)
-                .findFirst().orElse(null);
-    }
+   private String getActionTime(List<SecurityPassActivityLog> logs, String action) {
+    return logs.stream()
+        .filter(l -> action.equalsIgnoreCase(l.getAction()))
+        .map(l -> {
+            if (l.getTimestamp() == null) return null;
+            // Format to IST
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            sdf.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
+            return sdf.format(l.getTimestamp());
+        })
+        .findFirst()
+        .orElse(null);
+}
 
     public List<SecurityPassActivityLog> getRecentActivityLogs() {
         return logRepo.findTop10ByOrderByTimestampDesc();
