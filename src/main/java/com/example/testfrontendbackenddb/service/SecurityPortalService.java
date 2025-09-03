@@ -1,4 +1,5 @@
 package com.example.testfrontendbackenddb.service;
+
 import java.text.SimpleDateFormat;
 import com.example.testfrontendbackenddb.entity.GatePassRequest;
 import com.example.testfrontendbackenddb.entity.RegisterStudent;
@@ -60,18 +61,32 @@ public class SecurityPortalService {
             Map<String, Object> map = new HashMap<>();
             RegisterStudent s = pass.getStudent();
             map.put("id", passId);
-            map.put("name", s.getFullName());
-            map.put("fullName", s.getFullName());
-            map.put("course", s.getCourse());
             map.put("passNumber", passId);
+            map.put("name", s != null ? s.getFullName() : "");
+            map.put("fullName", s != null ? s.getFullName() : "");
+            map.put("course", s != null ? s.getCourse() : "");
             map.put("passType", pass.getPassType());
             map.put("reason", pass.getReason());
             map.put("destination", pass.getPlaceToVisit());
             map.put("status", status);
             map.put("checkOutTime", getActionTime(passLogs, "checkout"));
             map.put("checkInTime", getActionTime(passLogs, "checkin"));
-            map.put("photoUrl", s.getPhotoPath());
             map.put("toTime", pass.getToTime()); // Add arrival time for frontend
+
+            // --- IMPORTANT: Provide studentId and robust photoUrl ---
+            if (s != null) {
+                map.put("studentId", s.getId());
+                String photoUrl = "";
+                if (s.getPhotoPath() != null && !s.getPhotoPath().isEmpty()) {
+                    photoUrl = s.getPhotoPath();
+                } else if (s.getId() != null) {
+                    photoUrl = "https://hostel-backend-module-production-iist.up.railway.app/api/student/photo/" + s.getId();
+                }
+                map.put("photoUrl", photoUrl);
+            } else {
+                map.put("studentId", null);
+                map.put("photoUrl", "");
+            }
             result.add(map);
         }
         return result;
@@ -118,21 +133,33 @@ public class SecurityPortalService {
 
             Map<String, Object> map = new HashMap<>();
             map.put("id", passId);
+            map.put("passNumber", passId);
             map.put("studentId", anyLog.getStudentId());
             map.put("name", anyLog.getStudentName());
             map.put("studentName", anyLog.getStudentName());
             map.put("course", student != null ? student.getCourse() : "");
             map.put("branch", student != null ? student.getBranch() : "");
-            // 👇 This is the line that ensures passNumber is always sent
-            map.put("passNumber", passId); // or optPass.map(GatePassRequest::getPassNumber).orElse(passId)
             map.put("passType", optPass.map(GatePassRequest::getPassType).orElse(""));
             map.put("reason", anyLog.getReason());
             map.put("destination", anyLog.getDestination());
             map.put("gender", student != null ? student.getGender() : "");
             map.put("checkOutTime", getActionTime(passLogs, "checkout"));
             map.put("checkInTime", getActionTime(passLogs, "checkin"));
-            map.put("photoUrl", student != null ? student.getPhotoPath() : "");
             map.put("toTime", toTime);
+
+            // --- IMPORTANT: Provide robust photoUrl ---
+            if (student != null) {
+                String photoUrl = "";
+                if (student.getPhotoPath() != null && !student.getPhotoPath().isEmpty()) {
+                    photoUrl = student.getPhotoPath();
+                } else if (student.getId() != null) {
+                    photoUrl = "https://hostel-backend-module-production-iist.up.railway.app/api/student/photo/" + student.getId();
+                }
+                map.put("photoUrl", photoUrl);
+            } else {
+                map.put("photoUrl", "");
+            }
+
             result.add(map);
         }
         return result;
@@ -146,19 +173,19 @@ public class SecurityPortalService {
         return "active";
     }
 
-   private String getActionTime(List<SecurityPassActivityLog> logs, String action) {
-    return logs.stream()
-        .filter(l -> action.equalsIgnoreCase(l.getAction()))
-        .map(l -> {
-            if (l.getTimestamp() == null) return null;
-            // Format to IST
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            sdf.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
-            return sdf.format(l.getTimestamp());
-        })
-        .findFirst()
-        .orElse(null);
-}
+    private String getActionTime(List<SecurityPassActivityLog> logs, String action) {
+        return logs.stream()
+            .filter(l -> action.equalsIgnoreCase(l.getAction()))
+            .map(l -> {
+                if (l.getTimestamp() == null) return null;
+                // Format to IST
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                sdf.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
+                return sdf.format(l.getTimestamp());
+            })
+            .findFirst()
+            .orElse(null);
+    }
 
     public List<SecurityPassActivityLog> getRecentActivityLogs() {
         return logRepo.findTop10ByOrderByTimestampDesc();
