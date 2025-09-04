@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-@CrossOrigin(origins = {"http://localhost:5174", "https://hostel-management-system-cvny.vercel.app"})
+@CrossOrigin(origins = {"http://localhost:5174", "https://hostel-management-system-cvny.vercel.app" , "https://indoreinstitutehostel.vercel.app"})
 @RestController
 @RequestMapping("/api/activity-log")
 public class UserActivityLogController {
