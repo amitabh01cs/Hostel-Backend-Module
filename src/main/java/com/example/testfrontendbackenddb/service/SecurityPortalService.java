@@ -30,33 +30,45 @@ public class SecurityPortalService {
         this.studentRepo = studentRepo;
     }
 
-    // Merged active passes (not completed), with checkOutTime and possibly checkInTime if partial
+    // MODIFIED: This method now fetches all un-returned DAYS passes and today's HOURLY passes.
     public List<Map<String, Object>> getActivePassesWithTimes() {
-        // Get today's date in IST
         ZoneId zoneId = ZoneId.of("Asia/Kolkata");
         LocalDate today = LocalDate.now(zoneId);
-
         ZonedDateTime startOfDayIST = today.atStartOfDay(zoneId);
-        ZonedDateTime endOfDayIST = today.atTime(23, 59, 59, 999_000_000).atZone(zoneId);
-
         Date startOfDay = Date.from(startOfDayIST.toInstant());
-        Date endOfDay = Date.from(endOfDayIST.toInstant());
 
-        List<GatePassRequest> passes = gatePassRepo.findByStatusAndFromTimeBetween("approved", startOfDay, endOfDay);
+        // 1. Fetch today's approved hourly passes
+        List<GatePassRequest> hourlyPassesToday = gatePassRepo.findByStatusAndPassTypeAndFromTimeAfter("approved", "HOUR", startOfDay);
 
-        // Get all logs for today
-        List<SecurityPassActivityLog> logs = logRepo.findByTimestampBetween(startOfDay, endOfDay);
+        // 2. Fetch ALL approved days passes
+        List<GatePassRequest> allDaysPasses = gatePassRepo.findByStatusAndPassType("approved", "DAYS");
+        
+        // 3. Combine the lists
+        List<GatePassRequest> combinedPasses = new ArrayList<>();
+        combinedPasses.addAll(hourlyPassesToday);
+        combinedPasses.addAll(allDaysPasses);
+        
+        // Remove duplicates just in case
+        List<GatePassRequest> distinctPasses = combinedPasses.stream()
+                .distinct()
+                .collect(Collectors.toList());
 
-        // Group logs by gatePassId
-        Map<Integer, List<SecurityPassActivityLog>> logsMap = logs.stream()
+        // 4. Fetch all logs to check their status efficiently
+        List<Integer> passIds = distinctPasses.stream().map(GatePassRequest::getId).collect(Collectors.toList());
+        List<SecurityPassActivityLog> relevantLogs = logRepo.findByGatePassIdIn(passIds);
+        Map<Integer, List<SecurityPassActivityLog>> logsMap = relevantLogs.stream()
                 .collect(Collectors.groupingBy(SecurityPassActivityLog::getGatePassId));
 
         List<Map<String, Object>> result = new ArrayList<>();
-        for (GatePassRequest pass : passes) {
+        for (GatePassRequest pass : distinctPasses) {
             int passId = pass.getId();
             List<SecurityPassActivityLog> passLogs = logsMap.getOrDefault(passId, Collections.emptyList());
             String status = getPassStatus(passLogs);
-            if ("completed".equals(status)) continue; // Only active passes
+
+            // If the pass is completed, we don't need to show it on the active dashboard.
+            if ("completed".equals(status)) {
+                continue;
+            }
 
             Map<String, Object> map = new HashMap<>();
             RegisterStudent s = pass.getStudent();
@@ -71,16 +83,14 @@ public class SecurityPortalService {
             map.put("status", status);
             map.put("checkOutTime", getActionTime(passLogs, "checkout"));
             map.put("checkInTime", getActionTime(passLogs, "checkin"));
-            map.put("toTime", pass.getToTime()); // Add arrival time for frontend
+            map.put("toTime", pass.getToTime());
 
-            // --- IMPORTANT: Provide studentId and correct photoUrl (ALWAYS USE STUDENT ID, NOT PASS ID) ---
             if (s != null) {
                 map.put("studentId", s.getId());
                 String photoUrl = "";
                 if (s.getPhotoPath() != null && !s.getPhotoPath().isEmpty()) {
                     photoUrl = s.getPhotoPath();
                 } else if (s.getId() != null) {
-                    // FIX: Always use student ID here, not pass ID
                     photoUrl = "https://hostel-backend-module-production-iist.up.railway.app/api/student/photo/" + s.getId();
                 }
                 map.put("photoUrl", photoUrl);
@@ -93,21 +103,15 @@ public class SecurityPortalService {
         return result;
     }
 
-    // Merged completed logs (completed passes), with checkOutTime and checkInTime
     public List<Map<String, Object>> getCompletedLogsWithTimes(Date date, String gender) {
-        // 1. Get all logs for the date in IST
         ZoneId zoneId = ZoneId.of("Asia/Kolkata");
         LocalDate localDate = date.toInstant().atZone(zoneId).toLocalDate();
-
         ZonedDateTime startOfDayIST = localDate.atStartOfDay(zoneId);
         ZonedDateTime endOfDayIST = localDate.atTime(23, 59, 59, 999_000_000).atZone(zoneId);
-
         Date startOfDay = Date.from(startOfDayIST.toInstant());
         Date endOfDay = Date.from(endOfDayIST.toInstant());
 
         List<SecurityPassActivityLog> logs = logRepo.findByTimestampBetween(startOfDay, endOfDay);
-
-        // 2. Group logs by gatePassId
         Map<Integer, List<SecurityPassActivityLog>> logsMap = logs.stream()
                 .collect(Collectors.groupingBy(SecurityPassActivityLog::getGatePassId));
 
@@ -118,16 +122,13 @@ public class SecurityPortalService {
             String status = getPassStatus(passLogs);
             if (!"completed".equals(status)) continue;
 
-            // Find any one log to get studentId, etc.
             SecurityPassActivityLog anyLog = passLogs.get(0);
             Optional<RegisterStudent> optStudent = studentRepo.findById(anyLog.getStudentId());
             RegisterStudent student = optStudent.orElse(null);
 
-            // 🔥 Add this to get the GatePassRequest (for toTime and passNumber)
             Optional<GatePassRequest> optPass = gatePassRepo.findById(passId);
             Date toTime = optPass.map(GatePassRequest::getToTime).orElse(null);
 
-            // Gender filtering
             if (gender != null && !gender.isEmpty() && student != null) {
                 if (!gender.equalsIgnoreCase(student.getGender())) continue;
             }
@@ -148,7 +149,6 @@ public class SecurityPortalService {
             map.put("checkInTime", getActionTime(passLogs, "checkin"));
             map.put("toTime", toTime);
 
-            // --- IMPORTANT: Provide robust photoUrl using student ID, not pass ID ---
             if (student != null) {
                 String photoUrl = "";
                 if (student.getPhotoPath() != null && !student.getPhotoPath().isEmpty()) {
@@ -160,15 +160,12 @@ public class SecurityPortalService {
             } else {
                 map.put("photoUrl", "");
             }
-
             result.add(map);
         }
         return result;
     }
 
-    // NEW METHOD to get currently out students
     public List<Map<String, Object>> getCurrentlyOutStudents(String gender) {
-        // 1. Get today's date range in IST
         ZoneId zoneId = ZoneId.of("Asia/Kolkata");
         LocalDate today = LocalDate.now(zoneId);
         ZonedDateTime startOfDayIST = today.atStartOfDay(zoneId);
@@ -176,30 +173,25 @@ public class SecurityPortalService {
         Date startOfDay = Date.from(startOfDayIST.toInstant());
         Date endOfDay = Date.from(endOfDayIST.toInstant());
 
-        // 2. Fetch all of today's logs
         List<SecurityPassActivityLog> logs = logRepo.findByTimestampBetween(startOfDay, endOfDay);
-
-        // 3. Group by pass ID
         Map<Integer, List<SecurityPassActivityLog>> logsMap = logs.stream()
-            .collect(Collectors.groupingBy(SecurityPassActivityLog::getGatePassId));
+                .collect(Collectors.groupingBy(SecurityPassActivityLog::getGatePassId));
 
         List<Map<String, Object>> result = new ArrayList<>();
-        // 4. Iterate and find students who are "out"
         for (Map.Entry<Integer, List<SecurityPassActivityLog>> entry : logsMap.entrySet()) {
             List<SecurityPassActivityLog> passLogs = entry.getValue();
             String status = getPassStatus(passLogs);
             
-            if ("out".equals(status)) { // Check for "out" status specifically
+            if ("out".equals(status)) {
                 SecurityPassActivityLog anyLog = passLogs.get(0);
                 Optional<RegisterStudent> optStudent = studentRepo.findById(anyLog.getStudentId());
-                if (!optStudent.isPresent()) continue; // Skip if student not found
+                if (!optStudent.isPresent()) continue;
                 
                 RegisterStudent student = optStudent.get();
 
-                // 5. Apply gender filter if provided
                 if (gender != null && !gender.isEmpty() && student.getGender() != null) {
                     if (!gender.equalsIgnoreCase(student.getGender())) {
-                        continue; // Skip if gender doesn't match
+                        continue;
                     }
                 }
 
@@ -207,13 +199,11 @@ public class SecurityPortalService {
                 map.put("studentId", student.getId());
                 map.put("fullName", student.getFullName());
                 map.put("branch", student.getBranch());
-                // Add any other details you need for the frontend
                 result.add(map);
             }
         }
         return result;
     }
-
 
     private String getPassStatus(List<SecurityPassActivityLog> logs) {
         boolean checkedIn = logs.stream().anyMatch(l -> "checkin".equalsIgnoreCase(l.getAction()));
@@ -225,25 +215,23 @@ public class SecurityPortalService {
 
     private String getActionTime(List<SecurityPassActivityLog> logs, String action) {
         return logs.stream()
-            .filter(l -> action.equalsIgnoreCase(l.getAction()))
-            .map(l -> {
-                if (l.getTimestamp() == null) return null;
-                // Format to IST
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                sdf.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
-                return sdf.format(l.getTimestamp());
-            })
-            .findFirst()
-            .orElse(null);
+                .filter(l -> action.equalsIgnoreCase(l.getAction()))
+                .map(l -> {
+                    if (l.getTimestamp() == null) return null;
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    sdf.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
+                    return sdf.format(l.getTimestamp());
+                })
+                .findFirst()
+                .orElse(null);
     }
 
     public List<SecurityPassActivityLog> getRecentActivityLogs() {
         return logRepo.findTop10ByOrderByTimestampDesc();
     }
 
-    // Always use IST time for check-out
     public void checkOut(Integer gatePassId) {
-        GatePassRequest pass = gatePassRepo.findById(gatePassId).orElseThrow();
+        GatePassRequest pass = gatePassRepo.findById(gatePassId).orElseThrow(() -> new RuntimeException("Pass not found"));
         List<SecurityPassActivityLog> logs = logRepo.findByGatePassId(gatePassId);
         boolean alreadyCheckedOut = logs.stream().anyMatch(l -> "checkout".equalsIgnoreCase(l.getAction()));
         if (alreadyCheckedOut) throw new RuntimeException("Already checked out");
@@ -254,7 +242,6 @@ public class SecurityPortalService {
         log.setStudentName(pass.getStudent().getFullName());
         log.setAction("checkout");
 
-        // Set timestamp in IST
         ZoneId zoneId = ZoneId.of("Asia/Kolkata");
         Instant nowIST = ZonedDateTime.now(zoneId).toInstant();
         log.setTimestamp(Date.from(nowIST));
@@ -264,9 +251,8 @@ public class SecurityPortalService {
         logRepo.save(log);
     }
 
-    // Always use IST time for check-in
     public void checkIn(Integer gatePassId) {
-        GatePassRequest pass = gatePassRepo.findById(gatePassId).orElseThrow();
+        GatePassRequest pass = gatePassRepo.findById(gatePassId).orElseThrow(() -> new RuntimeException("Pass not found"));
         List<SecurityPassActivityLog> logs = logRepo.findByGatePassId(gatePassId);
         boolean alreadyCheckedIn = logs.stream().anyMatch(l -> "checkin".equalsIgnoreCase(l.getAction()));
         if (alreadyCheckedIn) throw new RuntimeException("Already checked in");
@@ -277,7 +263,6 @@ public class SecurityPortalService {
         log.setStudentName(pass.getStudent().getFullName());
         log.setAction("checkin");
 
-        // Set timestamp in IST
         ZoneId zoneId = ZoneId.of("Asia/Kolkata");
         Instant nowIST = ZonedDateTime.now(zoneId).toInstant();
         log.setTimestamp(Date.from(nowIST));
@@ -287,3 +272,5 @@ public class SecurityPortalService {
         logRepo.save(log);
     }
 }
+
+
