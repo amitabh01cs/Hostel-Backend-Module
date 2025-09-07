@@ -166,6 +166,55 @@ public class SecurityPortalService {
         return result;
     }
 
+    // NEW METHOD to get currently out students
+    public List<Map<String, Object>> getCurrentlyOutStudents(String gender) {
+        // 1. Get today's date range in IST
+        ZoneId zoneId = ZoneId.of("Asia/Kolkata");
+        LocalDate today = LocalDate.now(zoneId);
+        ZonedDateTime startOfDayIST = today.atStartOfDay(zoneId);
+        ZonedDateTime endOfDayIST = today.atTime(23, 59, 59, 999_000_000).atZone(zoneId);
+        Date startOfDay = Date.from(startOfDayIST.toInstant());
+        Date endOfDay = Date.from(endOfDayIST.toInstant());
+
+        // 2. Fetch all of today's logs
+        List<SecurityPassActivityLog> logs = logRepo.findByTimestampBetween(startOfDay, endOfDay);
+
+        // 3. Group by pass ID
+        Map<Integer, List<SecurityPassActivityLog>> logsMap = logs.stream()
+            .collect(Collectors.groupingBy(SecurityPassActivityLog::getGatePassId));
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        // 4. Iterate and find students who are "out"
+        for (Map.Entry<Integer, List<SecurityPassActivityLog>> entry : logsMap.entrySet()) {
+            List<SecurityPassActivityLog> passLogs = entry.getValue();
+            String status = getPassStatus(passLogs);
+            
+            if ("out".equals(status)) { // Check for "out" status specifically
+                SecurityPassActivityLog anyLog = passLogs.get(0);
+                Optional<RegisterStudent> optStudent = studentRepo.findById(anyLog.getStudentId());
+                if (!optStudent.isPresent()) continue; // Skip if student not found
+                
+                RegisterStudent student = optStudent.get();
+
+                // 5. Apply gender filter if provided
+                if (gender != null && !gender.isEmpty() && student.getGender() != null) {
+                    if (!gender.equalsIgnoreCase(student.getGender())) {
+                        continue; // Skip if gender doesn't match
+                    }
+                }
+
+                Map<String, Object> map = new HashMap<>();
+                map.put("studentId", student.getId());
+                map.put("fullName", student.getFullName());
+                map.put("branch", student.getBranch());
+                // Add any other details you need for the frontend
+                result.add(map);
+            }
+        }
+        return result;
+    }
+
+
     private String getPassStatus(List<SecurityPassActivityLog> logs) {
         boolean checkedIn = logs.stream().anyMatch(l -> "checkin".equalsIgnoreCase(l.getAction()));
         boolean checkedOut = logs.stream().anyMatch(l -> "checkout".equalsIgnoreCase(l.getAction()));
