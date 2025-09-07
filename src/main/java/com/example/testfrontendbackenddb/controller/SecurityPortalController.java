@@ -47,6 +47,16 @@ public class SecurityPortalController {
         return logs != null ? logs : new ArrayList<>();
     }
 
+    // NEW ENDPOINT: Get students who are currently checked out, with optional gender filter
+    // GET /api/security/currently-out?gender=M|F
+    @GetMapping("/currently-out")
+    public List<Map<String, Object>> getCurrentlyOutStudents(
+        @RequestParam(required = false) String gender
+    ) {
+        // This calls the corresponding method in your service
+        return service.getCurrentlyOutStudents(gender);
+    }
+
     // GET /api/security/activity-logs
     @GetMapping("/activity-logs")
     public List<SecurityPassActivityLog> getRecentActivityLogs() {
@@ -65,3 +75,4 @@ public class SecurityPortalController {
         service.checkIn(gatePassId);
     }
 }
+
