@@ -17,14 +17,12 @@ public class SecurityPortalController {
         this.service = service;
     }
 
-    // GET /api/security/active-passes
+    // This endpoint now uses the updated service logic to show all relevant active passes
     @GetMapping("/active-passes")
     public List<Map<String, Object>> getActivePasses() {
-        // Return merged details per pass (with both checkOutTime and checkInTime if available)
         return service.getActivePassesWithTimes();
     }
 
-    // GET /api/security/completed-logs?date=yyyy-MM-dd&gender=M|F
     @GetMapping("/completed-logs")
     public List<Map<String, Object>> getCompletedLogs(
             @RequestParam(required = false) String date,
@@ -36,40 +34,33 @@ public class SecurityPortalController {
         } else {
             try {
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-                sdf.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata")); // Ensure IST for parsing
+                sdf.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
                 parsedDate = sdf.parse(date);
             } catch (Exception e) {
                 parsedDate = new Date();
             }
         }
-        // Return merged details per pass (with both checkOutTime and checkInTime)
         List<Map<String, Object>> logs = service.getCompletedLogsWithTimes(parsedDate, gender);
         return logs != null ? logs : new ArrayList<>();
     }
-
-    // NEW ENDPOINT: Get students who are currently checked out, with optional gender filter
-    // GET /api/security/currently-out?gender=M|F
+    
     @GetMapping("/currently-out")
     public List<Map<String, Object>> getCurrentlyOutStudents(
         @RequestParam(required = false) String gender
     ) {
-        // This calls the corresponding method in your service
         return service.getCurrentlyOutStudents(gender);
     }
 
-    // GET /api/security/activity-logs
     @GetMapping("/activity-logs")
     public List<SecurityPassActivityLog> getRecentActivityLogs() {
         return service.getRecentActivityLogs();
     }
 
-    // POST /api/security/pass/{gatePassId}/checkout
     @PostMapping("/pass/{gatePassId}/checkout")
     public void checkOut(@PathVariable Integer gatePassId) {
         service.checkOut(gatePassId);
     }
 
-    // POST /api/security/pass/{gatePassId}/checkin
     @PostMapping("/pass/{gatePassId}/checkin")
     public void checkIn(@PathVariable Integer gatePassId) {
         service.checkIn(gatePassId);
