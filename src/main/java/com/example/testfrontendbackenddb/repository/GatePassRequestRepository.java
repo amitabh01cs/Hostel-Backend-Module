@@ -19,4 +19,3 @@ public interface GatePassRequestRepository extends JpaRepository<GatePassRequest
     int countByStudentIdAndStatus(Integer studentId, String status);
     int countByStudentId(Integer studentId);
 }
-
