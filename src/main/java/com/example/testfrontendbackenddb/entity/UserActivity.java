@@ -1,6 +1,6 @@
 package com.example.testfrontendbackenddb.entity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 @Entity
