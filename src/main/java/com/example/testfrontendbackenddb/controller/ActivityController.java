@@ -1,4 +1,4 @@
-package com.example.testfrontendbackenddb.‎controller;
+package com.example.testfrontendbackenddb.controller;
 
 import com.example.testfrontendbackenddb.entity.UserActivity;
 import com.example.testfrontendbackenddb.repository.UserActivityRepository;
@@ -10,13 +10,12 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*")  // Adjust for security as needed
+@CrossOrigin(origins = "*")  // Adjust origins as per your security needs
 public class ActivityController {
 
     @Autowired
     private UserActivityRepository repository;
 
-    // Endpoint to receive activity logs from frontend
     @PostMapping("/track")
     public void trackActivity(@RequestBody UserActivity activity) {
         if (activity.getTimestamp() == null) {
@@ -25,7 +24,6 @@ public class ActivityController {
         repository.save(activity);
     }
 
-    // Endpoint to fetch all activities of a specific user
     @GetMapping("/user-activities/{userId}")
     public List<UserActivity> getUserActivities(@PathVariable String userId) {
         return repository.findByUserId(userId);
